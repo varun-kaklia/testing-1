@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script>
+        // Open or create the database
+        var db = openDatabase('UserTrackerDB', '1.0', 'User Tracker Database', 2 * 1024 * 1024);
+
+        db.transaction(function(tx) {
+            // Create a table if it does not exist
+            tx.executeSql('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, email TEXT, last_visit DATE)');
+        });
+
+        // Function to add a new user
+        function addUser() {
+            var username = document.getElementById('username').value;
+            var email = document.getElementById('email').value;
+            var lastVisit = new Date().toISOString();
+
+            db.transaction(function(tx) {
+                tx.executeSql('INSERT INTO users (username, email, last_visit) VALUES (?, ?, ?)', [username, email, lastVisit], function(tx, result) {
+                    console.log('User added successfully!');
+                    alert('User added successfully!');
+                }, function(tx, error) {
+                    console.log('Error occurred while adding user:', error);
+                });
+            });
+
+            document.getElementById('username').value = '';
+            document.getElementById('email').value = '';
+        }
+
+        // Function to display users
+        function displayUsers() {
+            db.transaction(function(tx) {
+                tx.executeSql('SELECT * FROM users', [], function(tx, results) {
+                    var output = '<h2>User List</h2><ul>';
+                    for (var i = 0; i < results.rows.length; i++) {
+                        output += '<li>' + results.rows.item(i).username + ' (' + results.rows.item(i).email + ') - Last Visit: ' + results.rows.item(i).last_visit + '</li>';
+                    }
+                    output += '</ul>';
+                    document.getElementById('userList').innerHTML = output;
+                }, function(tx, error) {
+                    console.log('Error occurred while fetching users:', error);
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Web SQL User Data</h1>
+    <form onsubmit="addUser(); return false;">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <button type="submit">Add User</button>
+    </form>
+    <button onclick="displayUsers();">Show Users</button>
+    <div id="userList"></div>
+</body>
+</html>

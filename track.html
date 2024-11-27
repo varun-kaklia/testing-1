@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+</head>
+<body>
+    <h1>Web SQL - Tracking</h1>
+    <button id="store-id">Store Visitor ID</button>
+    <button id="retrieve-id">Retrieve Visitor ID</button>
+    <p id="visitor-id">Visitor ID: Not set</p>
+
+    <script>
+        // Open/Create the database
+        const db = openDatabase('VisitorDB', '1.0', 'Database for unique visitor ID', 2 * 1024 * 1024);
+
+        // Create table if it doesn't exist
+        db.transaction(function (tx) {
+            tx.executeSql('CREATE TABLE IF NOT EXISTS Visitors (id unique)');
+        });
+
+        // Function to generate a unique Visitor ID
+        function generateVisitorID() {
+            return 'visitor-' + new Date().getTime();
+        }
+
+        // Store visitor ID
+        document.getElementById('store-id').onclick = function () {
+            const visitorId = generateVisitorID();
+            db.transaction(function (tx) {
+                tx.executeSql('INSERT INTO Visitors (id) VALUES (?)', [visitorId], function (tx, result) {
+                    console.log("Visitor ID stored: ", visitorId);
+                    document.getElementById('visitor-id').textContent = "Visitor ID: " + visitorId;
+                }, function (tx, error) {
+                    console.log("Error while storing visitor ID: ", error.message);
+                });
+            });
+        };
+
+        // Retrieve visitor ID
+        document.getElementById('retrieve-id').onclick = function () {
+            db.transaction(function (tx) {
+                tx.executeSql('SELECT id FROM Visitors', [], function (tx, results) {
+                    if (results.rows.length > 0) {
+                        const visitorId = results.rows.item(0).id;
+                        document.getElementById('visitor-id').textContent = "Visitor ID: " + visitorId;
+                    } else {
+                        document.getElementById('visitor-id').textContent = "Visitor ID: Not set";
+                    }
+                }, function (tx, error) {
+                    console.log("Error while retrieving visitor ID: ", error.message);
+                });
+            });
+        };
+    </script>
+</body>
+</html>
